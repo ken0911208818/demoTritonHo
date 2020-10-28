@@ -1,8 +1,8 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	"github.com/ken0911208818/demoTritonHo/handler"
 	"github.com/ken0911208818/demoTritonHo/lib/config"
@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	xormCore "xorm.io/core"
 )
 
 func main() {
@@ -50,10 +51,17 @@ func initDependency() {
 		" password='" + config.GetStr(setting.DB_PASSWORD) + "'" +
 		" sslmode=disable"
 
-	db, err := sql.Open("postgres", connectStr)
+	db, err := xorm.NewEngine("postgres", connectStr)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("DB connection initialization failed", err)
 	}
+	//設定連線池數量
+	db.SetMaxIdleConns(config.GetInt(setting.DB_MAX_IDLE_CONN))
+	db.SetMaxOpenConns(config.GetInt(setting.DB_MAX_OPEN_CONN))
+	db.SetColumnMapper(xormCore.SnakeMapper{})
+	//uncomment it if you want to debug
+	//db.ShowSQL = true
+	//db.ShowErr = true
 	fmt.Println("連線成功")
 	handler.Init(db)
 }
