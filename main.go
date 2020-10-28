@@ -29,7 +29,7 @@ func main() {
 	router.HandleFunc("/v1/cats/", handler.CatGetAll).Methods("GET")
 	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatGetOne).Methods("GET")
 	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatUpdate).Methods("PUT")
-	//router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatDelete).Methods("DELETE")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatDelete).Methods("DELETE")
 	router.HandleFunc("/v1/cats/", handler.CatCreate).Methods("POST")
 
 	http.Handle("/", router)

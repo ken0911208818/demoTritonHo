@@ -109,6 +109,9 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 	for i, name := range columnNames {
 		colNamePart = colNamePart + name + ` = $` + strconv.Itoa(i+1) + `, `
 	}
+	// colNamePart[0:len(colNamePart))	=> name = $1, gender = $2,
+	// colNamePart[0:len(colNamePart)-2) => name = $1, gender = $2
+	// UPDATE cats SET name = $1, gender = $2 WHERE id = $3
 	q := `UPDATE cats SET ` + colNamePart[0:len(colNamePart)-2] + ` WHERE id = $` + strconv.Itoa(len(columnNames)+1)
 	values = append(values, cat.Id)
 
@@ -155,6 +158,28 @@ func CatCreate(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"id":"` + cat.Id + `"}`))
 	}
 
+}
+
+func CatDelete(w http.ResponseWriter, r *http.Request) {
+	// bind header basic
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// bind the input
+	id := mux.Vars(r)[`catId`]
+
+	//perform the delete to the database
+	result, err := db.Exec("delete from cats where id = $1", id)
+
+	//當 result.RowsAffected 進行 update insert or delete 若有資料進行更動時則會傳被引響的資料筆數 若沒有進行更動則回傳0
+	if err != nil {
+		errors(w, http.StatusInternalServerError, []byte(`{"error":"`+err.Error()+`"}`))
+	} else {
+		if affected, _ := result.RowsAffected(); affected == 0 {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
 }
 
 func errors(w http.ResponseWriter, httpCode int, err []byte) {
