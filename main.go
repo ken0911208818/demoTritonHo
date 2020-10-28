@@ -24,13 +24,13 @@ func main() {
 	// 路由器庫
 	router := mux.NewRouter()
 	// uuid 正則表達式 若不符合則無法通過
-	//uuidRegexp := `[[:alnum:]]{8}-[[:alnum:]]{4}-4[[:alnum:]]{3}-[89AaBb][[:alnum:]]{3}-[[:alnum:]]{12}`
+	uuidRegexp := `[[:alnum:]]{8}-[[:alnum:]]{4}-4[[:alnum:]]{3}-[89AaBb][[:alnum:]]{3}-[[:alnum:]]{12}`
 
 	router.HandleFunc("/v1/cats/", handler.CatGetAll).Methods("GET")
-	//router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatGetOne).Methods("GET")
-	//router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatUpdate).Methods("PUT")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatGetOne).Methods("GET")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatUpdate).Methods("PUT")
 	//router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatDelete).Methods("DELETE")
-	//router.HandleFunc("/v1/cats/", handler.CatCreate).Methods("POST")
+	router.HandleFunc("/v1/cats/", handler.CatCreate).Methods("POST")
 
 	http.Handle("/", router)
 	s := &http.Server{
