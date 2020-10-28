@@ -1,8 +1,8 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	"github.com/ken0911208818/demoTritonHo/handler"
 	"github.com/ken0911208818/demoTritonHo/lib/config"
@@ -49,9 +49,10 @@ func initDependency() {
 		" user=" + config.GetStr(setting.DB_USERNAME) +
 		" password='" + config.GetStr(setting.DB_PASSWORD) + "'" +
 		" sslmode=disable"
-	db, err := xorm.NewEngine(`postgres`, connectStr)
+
+	db, err := sql.Open("postgres", connectStr)
 	if err != nil {
-		log.Panic("DB connection initialization failed", err)
+		log.Panic(err)
 	}
 	fmt.Println("連線成功")
 	handler.Init(db)
