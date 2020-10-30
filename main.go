@@ -2,18 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	"github.com/ken0911208818/demoTritonHo/handler"
 	"github.com/ken0911208818/demoTritonHo/lib/config"
 	"github.com/ken0911208818/demoTritonHo/setting"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"runtime"
 	"strconv"
 	"time"
-	xormCore "xorm.io/core"
 )
 
 func main() {
@@ -51,14 +51,21 @@ func initDependency() {
 		" password='" + config.GetStr(setting.DB_PASSWORD) + "'" +
 		" sslmode=disable"
 
-	db, err := xorm.NewEngine("postgres", connectStr)
+	//db, err := xorm.NewEngine("postgres", connectStr) //xorm
+	db, err := gorm.Open(postgres.New(postgres.Config{DSN: connectStr, PreferSimpleProtocol: true}), &gorm.Config{})
 	if err != nil {
 		log.Panic("DB connection initialization failed", err)
 	}
+	sql, _ := db.DB()
+
+	sql.SetMaxIdleConns(config.GetInt(setting.DB_MAX_IDLE_CONN))
+	sql.SetMaxOpenConns(config.GetInt(setting.DB_MAX_OPEN_CONN))
+	sql.SetConnMaxLifetime(time.Hour)
+	sql.Ping()
 	//設定連線池數量
-	db.SetMaxIdleConns(config.GetInt(setting.DB_MAX_IDLE_CONN))
-	db.SetMaxOpenConns(config.GetInt(setting.DB_MAX_OPEN_CONN))
-	db.SetColumnMapper(xormCore.SnakeMapper{})
+	//db.SetMaxIdleConns(config.GetInt(setting.DB_MAX_IDLE_CONN)) //xorm
+	//db.SetMaxOpenConns(config.GetInt(setting.DB_MAX_OPEN_CONN)) //xorm
+	//db.SetColumnMapper(xormCore.SnakeMapper{}) //xorm
 	//uncomment it if you want to debug
 	//db.ShowSQL = true
 	//db.ShowErr = true
