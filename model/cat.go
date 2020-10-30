@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Cat struct {
-	Id string `json:"id"`
+	Id string `gorm:"primaryKey" json:"id"`
 
 	Name   string `json:"name"`
 	Gender string `json:"gender"`
