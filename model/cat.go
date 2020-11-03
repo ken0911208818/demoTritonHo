@@ -6,10 +6,10 @@ type Cat struct {
 	Id string `gorm:"primaryKey" json:"id"`
 
 	Name   string `json:"name"`
-	Gender string `json:"gender"`
+	Gender string `json:"gender" validate:"required,enum=MALE/FEMALE"`
 
-	CreateTime time.Time `json:"createTime"`
-	UpdateTime time.Time `json:"updateTime"`
+	CreateTime time.Time `json:"createTime" validate:"zerotime"`
+	UpdateTime time.Time `json:"updateTime" validate:"zerotime"`
 }
 
 func (c Cat) TableName() string {

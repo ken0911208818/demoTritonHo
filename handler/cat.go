@@ -1,148 +1,111 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/gorilla/mux"
+	"errors"
 	"github.com/ken0911208818/demoTritonHo/lib/httputil"
 	"github.com/ken0911208818/demoTritonHo/model"
 	"github.com/satori/go.uuid"
+	"gorm.io/gorm"
 	"net/http"
 )
 
-func CatGetAll(w http.ResponseWriter, r *http.Request) {
+var errNotFound = errors.New("The record is not found.")
+
+func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
 	// create the object slice
 	cats := []model.Cat{}
 
 	//load the object from database
-	result := db.Find(&cats)
+	result := session.Find(&cats)
 
 	if err := result.Error; err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{error":"` + err.Error() + `"}"`))
-		return
+		return http.StatusInternalServerError, err, nil
 	}
 
 	//output the result
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(cats)
+	return http.StatusOK, nil, cats
 }
 
-func CatGetOne(w http.ResponseWriter, r *http.Request) {
+func CatGetOne(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
 	//create the object and get the id from the url
 	var cat model.Cat
-	cat.Id = mux.Vars(r)[`catId`]
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	cat.Id = values[`catId`]
+
 	//load the object date from database
-	result := db.Where(`id = ?`, cat.Id).First(&cat)
+	result := session.Where(`id = ?`, cat.Id).First(&cat)
 	if err := result.Error; err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	}
 	//output the object , or any error
-
 	// sql.ErrNoRows = not found any data offset id = url.id
-	fmt.Println(result.RowsAffected)
 	if result.RowsAffected == 0 {
-		w.WriteHeader(http.StatusNotFound)
-	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(cat)
+		return http.StatusNotFound, errNotFound, nil
 	}
+	return http.StatusOK, nil, cat
 }
 
-func CatUpdate(w http.ResponseWriter, r *http.Request) {
+func CatUpdate(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
 	//create the object and get the id from url
 	var cat model.Cat
-	cat.Id = mux.Vars(r)[`catId`]
+	cat.Id = values[`catId`]
 
 	//since we have to know which field is updated , thus we need to use structure with pointer attribute
 
 	//bind the input
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := httputil.BindForUpdate(r, &cat); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
-	}
-	//perform basic checking on gender
-	if cat.Gender != "" && cat.Gender != `MALE` && cat.Gender != `FEMALE` {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"Gender must be MALE or FEMALE"}`))
-		return
+		return http.StatusBadRequest, err, nil
 	}
 
-	result := db.Save(&cat)
+	result := session.Model(&cat).Where(`id = ?`, cat.Id).Updates(cat)
 	//output the result
 	if err := result.Error; err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
 		if result.RowsAffected == 0 {
-			w.WriteHeader(http.StatusNotFound)
+			return http.StatusNotFound, err, nil
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return http.StatusNoContent, nil, nil
 		}
 	}
 }
 
-func CatCreate(w http.ResponseWriter, r *http.Request) {
-	// bind header basic
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
+func CatCreate(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
 	// bind the input
 	cat := model.Cat{}
 	if err := httputil.Bind(r, &cat); err != nil {
-		errors(w, http.StatusBadRequest, []byte(`{"error":"`+err.Error()+`"}`))
-		return
-	}
-
-	//perform basic checking on gender
-	if cat.Gender != `MALE` && cat.Gender != `FEMALE` {
-		errors(w, http.StatusBadRequest, []byte(`{"error":"Gender must be MALE or FEMALE"}`))
+		return http.StatusBadRequest, err, nil
 	}
 
 	//generate the primary key for the cat
 	u := uuid.NewV4()
 	cat.Id = u.String()
 	//perform the create to the database
-	result := db.Create(&cat)
+	result := session.Create(&cat)
 
 	if err := result.Error; err != nil {
-		errors(w, http.StatusInternalServerError, []byte(`{"error":"`+err.Error()+`"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id":"` + cat.Id + `"}`))
+		return http.StatusOK, nil, []byte(`{"id":"` + cat.Id + `"}`)
 	}
 
 }
 
-func CatDelete(w http.ResponseWriter, r *http.Request) {
-	// bind header basic
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
+func CatDelete(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
 	// bind the input
-	id := mux.Vars(r)[`catId`]
+	id := values[`catId`]
 
 	//perform the delete to the database
 	// db.Delete(new(model.Cat), id) // 帶入參數只支援整數
-	result := db.Where(`id = ?`, id).Delete(new(model.Cat))
+	result := session.Where(`id = ?`, id).Delete(new(model.Cat))
 
 	//當 result.RowsAffected 進行 update insert or delete 若有資料進行更動時則會傳被引響的資料筆數 若沒有進行更動則回傳0
 	if err := result.Error; err != nil {
-		errors(w, http.StatusInternalServerError, []byte(`{"error":"`+err.Error()+`"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
 		if result.RowsAffected == 0 {
-			w.WriteHeader(http.StatusNotFound)
+			return http.StatusNotFound, err, nil
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return http.StatusNoContent, nil, nil
 		}
 	}
-}
-
-func errors(w http.ResponseWriter, httpCode int, err []byte) {
-	w.WriteHeader(httpCode)
-	w.Write(err)
 }

@@ -3,6 +3,7 @@ package httputil
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/ken0911208818/demoTritonHo/lib/validate"
 	"net/http"
 )
 
@@ -12,7 +13,8 @@ func Bind(r *http.Request, obj interface{}) error {
 		return err
 	}
 
-	return nil
+	//perform basic validation on the input
+	return validate.ValidateStructForCreate(obj)
 }
 
 func BindForUpdate(r *http.Request, obj interface{}) error {
