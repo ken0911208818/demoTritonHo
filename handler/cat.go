@@ -11,12 +11,12 @@ import (
 
 var errNotFound = errors.New("The record is not found.")
 
-func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
+func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB, userId string) (statusCode int, err error, output interface{}) {
 	// create the object slice
 	cats := []model.Cat{}
 
-	//load the object from database
-	result := session.Find(&cats)
+	//load the object data from database
+	result := session.Where(``).Find(&cats)
 
 	if err := result.Error; err != nil {
 		return http.StatusInternalServerError, err, nil
@@ -26,7 +26,7 @@ func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB) (sta
 	return http.StatusOK, nil, cats
 }
 
-func CatGetOne(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
+func CatGetOne(r *http.Request, values map[string]string, session *gorm.DB, UserId string) (statusCode int, err error, output interface{}) {
 	//create the object and get the id from the url
 	var cat model.Cat
 	cat.Id = values[`catId`]
@@ -44,7 +44,7 @@ func CatGetOne(r *http.Request, values map[string]string, session *gorm.DB) (sta
 	return http.StatusOK, nil, cat
 }
 
-func CatUpdate(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
+func CatUpdate(r *http.Request, values map[string]string, session *gorm.DB, UserId string) (statusCode int, err error, output interface{}) {
 	//create the object and get the id from url
 	var cat model.Cat
 	cat.Id = values[`catId`]
@@ -69,7 +69,7 @@ func CatUpdate(r *http.Request, values map[string]string, session *gorm.DB) (sta
 	}
 }
 
-func CatCreate(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
+func CatCreate(r *http.Request, values map[string]string, session *gorm.DB, UserId string) (statusCode int, err error, output interface{}) {
 	// bind the input
 	cat := model.Cat{}
 	if err := httputil.Bind(r, &cat); err != nil {
@@ -90,7 +90,7 @@ func CatCreate(r *http.Request, values map[string]string, session *gorm.DB) (sta
 
 }
 
-func CatDelete(r *http.Request, values map[string]string, session *gorm.DB) (statusCode int, err error, output interface{}) {
+func CatDelete(r *http.Request, values map[string]string, session *gorm.DB, UserId string) (statusCode int, err error, output interface{}) {
 	// bind the input
 	id := values[`catId`]
 
