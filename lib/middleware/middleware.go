@@ -15,7 +15,8 @@ func Init(database *gorm.DB) {
 	db = database
 }
 
-type Handler func(r *http.Request, urlValues map[string]string, session *gorm.DB) (statusCode int, err error, output interface{})
+type Handler func(r *http.Request, urlValues map[string]string, session *gorm.DB, userId string) (statusCode int, err error, output interface{})
+type PlainHandler func(res http.ResponseWriter, req *http.Request, urlValues map[string]string, db *gorm.DB)
 
 //type PlainHandler func(res http.ResponseWriter, req *http.Request, urlValues map[string]string)
 
@@ -33,8 +34,10 @@ func SendResponse(res http.ResponseWriter, statusCode int, data interface{}) {
 //a middleware to handle user authorization
 func Wrap(f Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+
+		UserID := "123"
 		session := db.Session(&gorm.Session{PrepareStmt: true})
-		if statusCode, err, output := f(req, mux.Vars(req), session); err == nil {
+		if statusCode, err, output := f(req, mux.Vars(req), session, UserID); err == nil {
 			//the business logic handler return no error, then try to commit the db session
 			if err := session.Error; err != nil {
 				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -44,5 +47,14 @@ func Wrap(f Handler) http.HandlerFunc {
 		} else {
 			SendResponse(res, statusCode, map[string]string{"error": err.Error()})
 		}
+	}
+}
+
+//do nothing and provide injection of database object only
+//normally it is used by public endpoint
+func Plain(f PlainHandler) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		f(res, req, mux.Vars(req), db)
+
 	}
 }
