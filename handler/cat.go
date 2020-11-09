@@ -11,12 +11,12 @@ import (
 
 var errNotFound = errors.New("The record is not found.")
 
-func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB, userId string) (statusCode int, err error, output interface{}) {
+func CatGetAll(r *http.Request, values map[string]string, session *gorm.DB, UserId string) (statusCode int, err error, output interface{}) {
 	// create the object slice
 	cats := []model.Cat{}
 
 	//load the object data from database
-	result := session.Where(``).Find(&cats)
+	result := session.Where(`user_id = ?`, UserId).Find(&cats)
 
 	if err := result.Error; err != nil {
 		return http.StatusInternalServerError, err, nil
@@ -32,7 +32,7 @@ func CatGetOne(r *http.Request, values map[string]string, session *gorm.DB, User
 	cat.Id = values[`catId`]
 
 	//load the object date from database
-	result := session.Where(`id = ?`, cat.Id).First(&cat)
+	result := session.Where(`id = ? and user_id = ?`, cat.Id, UserId).First(&cat)
 	if err := result.Error; err != nil {
 		return http.StatusInternalServerError, err, nil
 	}
@@ -56,7 +56,7 @@ func CatUpdate(r *http.Request, values map[string]string, session *gorm.DB, User
 		return http.StatusBadRequest, err, nil
 	}
 
-	result := session.Model(&cat).Where(`id = ?`, cat.Id).Updates(cat)
+	result := session.Model(&cat).Where(`id = ?and user_id = ?`, cat.Id, UserId).Updates(cat)
 	//output the result
 	if err := result.Error; err != nil {
 		return http.StatusInternalServerError, err, nil
@@ -79,6 +79,7 @@ func CatCreate(r *http.Request, values map[string]string, session *gorm.DB, User
 	//generate the primary key for the cat
 	u := uuid.NewV4()
 	cat.Id = u.String()
+	cat.UserId = UserId
 	//perform the create to the database
 	result := session.Create(&cat)
 
@@ -96,7 +97,7 @@ func CatDelete(r *http.Request, values map[string]string, session *gorm.DB, User
 
 	//perform the delete to the database
 	// db.Delete(new(model.Cat), id) // 帶入參數只支援整數
-	result := session.Where(`id = ?`, id).Delete(new(model.Cat))
+	result := session.Where(`id = ? and user_id = ?`, id, UserId).Delete(new(model.Cat))
 
 	//當 result.RowsAffected 進行 update insert or delete 若有資料進行更動時則會傳被引響的資料筆數 若沒有進行更動則回傳0
 	if err := result.Error; err != nil {
