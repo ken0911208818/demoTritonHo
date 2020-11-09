@@ -3,8 +3,10 @@ package middleware
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/ken0911208818/demoTritonHo/lib/auth"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 )
 
 var (
@@ -34,10 +36,23 @@ func SendResponse(res http.ResponseWriter, statusCode int, data interface{}) {
 //a middleware to handle user authorization
 func Wrap(f Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-
-		UserID := "123"
+		authorization := req.Header.Get("Authorization")
+		jwtToken := strings.Split(authorization, "Bearer ")[1]
+		userId, err := auth.Verify(jwtToken)
+		if err != nil {
+			SendResponse(res, http.StatusUnauthorized, map[string]string{"error": err.Error()})
+			return
+		} else {
+			//please think carefully on this design, as it has potential security problem
+			if newToken, err := auth.Sign(userId); err != nil {
+				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			} else {
+				res.Header().Add("Authorization", newToken) // update JWT Token
+			}
+		}
 		session := db.Session(&gorm.Session{PrepareStmt: true})
-		if statusCode, err, output := f(req, mux.Vars(req), session, UserID); err == nil {
+		if statusCode, err, output := f(req, mux.Vars(req), session, userId); err == nil {
 			//the business logic handler return no error, then try to commit the db session
 			if err := session.Error; err != nil {
 				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
