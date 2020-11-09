@@ -61,7 +61,8 @@ func initDependency() {
 		" dbname=" + config.GetStr(setting.DB_NAME) +
 		" user=" + config.GetStr(setting.DB_USERNAME) +
 		" password='" + config.GetStr(setting.DB_PASSWORD) + "'" +
-		" sslmode=disable"
+		" sslmode=disable" +
+		" TimeZone=Asia/Taipei"
 
 	//db, err := xorm.NewEngine("postgres", connectStr) //xorm
 	db, err := gorm.Open(postgres.New(postgres.Config{DSN: connectStr, PreferSimpleProtocol: true}), &gorm.Config{})
