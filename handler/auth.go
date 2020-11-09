@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/ken0911208818/demoTritonHo/lib/auth"
 	"github.com/ken0911208818/demoTritonHo/lib/httputil"
 	"github.com/ken0911208818/demoTritonHo/lib/middleware"
@@ -26,7 +25,6 @@ func Login(w http.ResponseWriter, r *http.Request, urlValues map[string]string, 
 		middleware.SendResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	fmt.Println(input, user)
 	//密碼比對 || 確認是否有無使用者
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordDigest), []byte(input.Password)); err != nil || result.RowsAffected == 0 {
 		middleware.SendResponse(w, http.StatusUnauthorized, map[string]string{"error": "Incorrect Email / Password"})
@@ -39,6 +37,6 @@ func Login(w http.ResponseWriter, r *http.Request, urlValues map[string]string, 
 		w.Header().Add("Authorization", newToken)
 		//allow CORS
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
-		middleware.SendResponse(w, http.StatusOK, map[string]string{"userId": user.Id})
+		middleware.SendResponse(w, http.StatusOK, map[string]string{"userId": user.Id, "token": newToken})
 	}
 }
