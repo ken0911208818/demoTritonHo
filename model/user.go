@@ -11,6 +11,6 @@ type User struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName" validate:"required"`
 
-	CreateTime time.Time `json:"createTime" validate:"zerotime"`
-	UpdateTime time.Time `json:"updateTime" validate:"zerotime"`
+	CreatedAt time.Time `json:"created_at" validate:"zerotime"`
+	UpdatedAt time.Time `json:"updated_at" validate:"zerotime"`
 }
