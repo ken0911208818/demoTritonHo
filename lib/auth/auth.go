@@ -3,7 +3,6 @@ package auth
 import (
 	"crypto/rsa"
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
@@ -65,7 +64,11 @@ func Verify(authToken string) (userId string, err error) {
 		return ``, errors.New("Improper JWT Token")
 	} else {
 		userId = s.UserId
+		timestamp := time.Unix(int64(s.Exp), 0)
+		if timestamp.Before(time.Now()) {
+			return userId, errors.New("JWT Token has expired")
+		}
 	}
-	fmt.Println(userId)
+
 	return userId, nil
 }
